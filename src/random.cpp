@@ -1,5 +1,4 @@
-#ifndef PNGSQ_RANDOM_HPP
-#define PNGSQ_RANDOM_HPP
+#include "random.hpp"
 
 #include <chrono>
 #include <cstdint>
@@ -13,25 +12,27 @@ static constexpr uint64_t mix64(uint64_t input) {
 	return input ^ (input >> 31);
 }
 
-// Returns a random number on [0, UINT64_MAX]
+// Returns a random integer on [0, UINT64_MAX]
 uint64_t mix64_rand(void) {
 	static std::random_device rd;
 	static std::chrono::high_resolution_clock::duration time = std::chrono::high_resolution_clock::now().time_since_epoch();
-	static uint64_t state = rd.entropy() ? rd()
-		: std::chrono::duration_cast<std::chrono::seconds>(time).count() ^ std::chrono::duration_cast<std::chrono::milliseconds>(time).count()
-		^ std::chrono::duration_cast<std::chrono::microseconds>(time).count() ^ std::chrono::duration_cast<std::chrono::nanoseconds>(time).count();
+	static uint64_t state = rd.entropy() ? rd() : rd()
+		^ std::chrono::duration_cast<std::chrono::seconds>(time).count()
+		^ std::chrono::duration_cast<std::chrono::milliseconds>(time).count() << 48
+		^ std::chrono::duration_cast<std::chrono::microseconds>(time).count() << 24
+		^ std::chrono::duration_cast<std::chrono::nanoseconds>(time).count();
 	return mix64(state += 0x9e3779b97f4a7c15ULL); // ((sqrt5-1)/2) * 2^64
 }
 
-// Returns a random number on [0, n)
+// Returns a random integer on [0, n)
 uint64_t mix64_rand(uint64_t n) {
 	uint64_t limit = UINT64_MAX - UINT64_MAX % n;
 	uint64_t result;
-	while ((result = mix64_rand()) > limit);
+	while ((result = mix64_rand()) >= limit);
 	return result % n;
 }
 
-// Returns a weighted random number on [0, n) if all probabilities add to 1, and returns on [0, n] otherwise
+// Returns a weighted random number on [0, n) if all probabilities add to 1
 // The denominator should not exceed UINT64_MAX
 uint64_t mix64_rand(uint64_t n, double const* numerators, double denominator) {
 	double x = (double)mix64_rand((uint64_t)denominator);
@@ -43,7 +44,7 @@ uint64_t mix64_rand(uint64_t n, double const* numerators, double denominator) {
 	return n;
 }
 
-// Returns a number on (0, 1) weighted according to the probability density function given by `pdf`
+// Returns a number on (0, 1) weighted according to the probability density function `pdf`
 double mix64_rand_pdf(double mode, std::function<double(double)> pdf) {
 	double x, y;
 	do {
@@ -52,6 +53,3 @@ double mix64_rand_pdf(double mode, std::function<double(double)> pdf) {
 	} while (y > pdf(x));
 	return x;
 }
-
-
-#endif // PNGSQ_RANDOM_HPP

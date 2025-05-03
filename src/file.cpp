@@ -10,13 +10,11 @@
 #include <filesystem>
 #endif
 
-#define STB_IMAGE_IMPLEMENTATION
-
 #include "head.hpp"
 #include "buffer.hpp"
 
-img_t load_image(char const* path) {
-	img_t image{};
+struct img load_image(char const* path) {
+	struct img image{};
 	int channels = 0;
 	stbi_convert_iphone_png_to_rgb(1);
 	if (!stbi_is_16_bit(path))
@@ -35,42 +33,48 @@ img_t load_image(char const* path) {
 	return image;
 }
 
+void free_image(struct img& image) {
+	stbi_image_free(image.data);
+}
+
 #pragma pack(push, 1)
+// Functor that makes conversion from `uint32_t` to `char*` a bit cleaner
 class u32_to_8 {
-	char a, b, c, d;
+	const char arr[4];
 public:
-	constexpr explicit u32_to_8(const uint32_t x) : a(x >> 24), b((x >> 16) & 0xff), c((x >> 8) & 0xff), d(x & 0xff) { }
-	constexpr operator char* () const { return (char*)this; }
+	constexpr explicit u32_to_8(const uint32_t& x) :
+		arr { (char)(x >> 24), (char)((x >> 16) & 0xff), (char)((x >> 8) & 0xff), (char)(x & 0xff) } {}
+	constexpr operator char const* () const { return arr; }
 };
 #pragma pack(pop)
 
-static constexpr rgb_t* px_from_coord(const img_t& image, int x, int y) {
-	return (rgb_t*)&image.data[(y * (size_t)image.width + x) * 3];
+static constexpr struct rgb& px_from_coord(const struct img& image, int x, int y) {
+	return *(struct rgb*)&image.data[(y * (size_t)image.width + x) * 3];
 }
 
-static inline void put_scanlines(const img_t& image, buffer& buf, libdeflate_compressor* compressor) {
-	rgb_t const* end = image.palette + sizeof(image.palette) / sizeof(image.palette[0]);
+static inline void put_scanlines(const struct img& image, buffer& buf, libdeflate_compressor* compressor) {
+	struct rgb const* const end = image.palette + sizeof(image.palette) / sizeof(image.palette[0]);
 	const bool odd = image.width % 2;
 	const int count = image.width - (int)odd;
 	const size_t length = (image.width + (size_t)odd) / 2 + 1;
-	size_t bytes = image.height * length;
+	const size_t bytes = image.height * length;
 	unsigned char* lines = new unsigned char[bytes];
 	for (int i = 0; i < image.height; i++) {
 		lines[i * length] = 0;
 		for (int j = 0; j < count; j += 2) {
-			unsigned char p1 = (unsigned char)(std::find(image.palette, end, *px_from_coord(image, j, i)) - image.palette);
-			unsigned char p2 = (unsigned char)(std::find(image.palette, end, *px_from_coord(image, j + 1, i)) - image.palette);
+			stbi_uc p1 = (stbi_uc)(std::find(image.palette, end, px_from_coord(image, j, i)) - image.palette);
+			stbi_uc p2 = (stbi_uc)(std::find(image.palette, end, px_from_coord(image, j + 1, i)) - image.palette);
 #ifdef _MSC_VER
 #	pragma warning(push)
-#	pragma warning(disable: 6386)
+#	pragma warning(disable: 6386) // C6386: Buffer overrun when writing to 'lines'.
 #endif // _MSC_VER
 			lines[j / 2 + i * length + 1] = (p1 << 4) | p2;
 #ifdef _MSC_VER
 #	pragma warning(pop)
-#endif
+#endif // _MSC_VER
 		}
 		if (odd) {
-			unsigned char p1 = (unsigned char)(std::find(image.palette, end, *px_from_coord(image, count, i)) - image.palette);
+			stbi_uc p1 = (stbi_uc)(std::find(image.palette, end, px_from_coord(image, count, i)) - image.palette);
 			lines[count / 2 + i * length + 1] = p1 << 4;
 		}
 	}
@@ -86,7 +90,12 @@ static inline void write_chunk(std::ofstream& out, buffer& buf) {
 	out.write(u32_to_8(libdeflate_crc32(0, buf.data(), buf.size())), 4);
 }
 
-bool write_image(const img_t& image, char const* path, libdeflate_compressor* compressor) {
+// Annoying Intellisense error
+#if defined(_WIN32) && defined(_MSC_VER)
+extern "C" int __stdcall MultiByteToWideChar(unsigned int cp, unsigned long flags, const char* str, int cbmb, wchar_t* widestr, int cchwide);
+#endif // defined(_WIN32) && defined(_MSC_VER)
+
+bool write_image(const struct img& image, char const* path, libdeflate_compressor* compressor) {
 	buffer buf;
 #ifdef _WIN32
 	if (std::strlen(path) > INT_MAX)
