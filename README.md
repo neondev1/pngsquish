@@ -2,16 +2,18 @@
 
 ## Credits
 
-This tool is a C++ implementation of the procedure described by [this blog post](https://mzucker.github.io/2016/09/20/noteshrink.html).
+This tool contains a C++ implementation of the procedure described by [this blog post](https://mzucker.github.io/2016/09/20/noteshrink.html).
 
 ### Libraries
 
 This software uses the following libraries:
 
 - [Dear ImGui](https://github.com/ocornut/imgui): Copyright (c) 2014-2025 Omar Cornut; licensed under the licensed under the [MIT License](https://github.com/ocornut/imgui/blob/master/LICENSE.txt)
+- [glad](https://glad.dav1d.de): Created by David Herberth; in the [public domain](https://github.com/Dav1dde/glad/blob/glad2/README.md#license)
 - [GLFW](https://www.glfw.org/): Copyright (c) 2002-2006 Marcus Geelnard, (c) 2006-2019 Camilla Löwy; licensed under the [zlib License](https://github.com/glfw/glfw/blob/master/LICENSE.md)
 - [libdeflate](https://github.com/ebiggers/libdeflate): Copyright (c) 2016 Eric Biggers, (c) 2024 Google LLC; licensed under the [MIT License](https://github.com/ebiggers/libdeflate/blob/master/COPYING)
-- [stb](https://github.com/nothings/stb): Copyright (c) 2017 Sean Barrett; licensed under the [MIT License](https://github.com/nothings/stb/blob/master/LICENSE)
+- [Native File Dialog Extended](https://github.com/btzy/nativefiledialog-extended): Created by Bernard Teo and Michael Labbe; licensed under the [zlib License](https://github.com/btzy/nativefiledialog-extended/blob/master/LICENSE)
+- [stb_image](https://github.com/nothings/stb/blob/master/stb_image.h) and [stb_image_resize2](https://github.com/nothings/stb/blob/master/stb_image_resize2.h) from [stb](https://github.com/nothings/stb): Created by Sean Barrett; in the [public domain](https://github.com/nothings/stb/blob/master/LICENSE)
 
 ### Works Cited
 

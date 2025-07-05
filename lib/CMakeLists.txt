@@ -3,6 +3,8 @@ include_directories(
 	glfw/include
 )
 
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build shared libraries" FORCE)
+
 set(LIBDEFLATE_BUILD_GZIP OFF CACHE BOOL "Build the libdeflate-gzip program" FORCE)
 set(LIBDEFLATE_BUILD_SHARED_LIB OFF CACHE BOOL "Build the shared library" FORCE)
 set(LIBDEFLATE_BUILD_STATIC_LIB ON CACHE BOOL "Build the static library" FORCE)
@@ -18,7 +20,12 @@ set(LIBDEFLATE_USE_SHARED_LIB OFF CACHE BOOL "Link the libdeflate-gzip and test 
 set(LIBDEFLATE_ZLIB_SUPPORT ON CACHE BOOL "Support the zlib format" FORCE)
 add_subdirectory(libdeflate)
 
-set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build shared libraries" FORCE)
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build a shared library instead of static" FORCE)
+set(NFD_BUILD_SDL2_TESTS OFF CACHE BOOL "Build SDL2 tests for nfd" FORCE)
+set(NFD_BUILD_TESTS OFF CACHE BOOL "Build tests for nfd" FORCE)
+set(NFD_INSTALL OFF CACHE BOOL "Generate install target for nfd")
+add_subdirectory(nativefiledialog-extended)
+
 set(GLFW_BUILD_DOCS OFF CACHE BOOL "Build the GLFW documentation" FORCE)
 set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "Build the GLFW example programs" FORCE)
 set(GLFW_BUILD_TESTS OFF CACHE BOOL "Build the GLFW test programs" FORCE)
@@ -26,7 +33,7 @@ set(GLFW_INSTALL OFF CACHE BOOL "Generate installation target" FORCE)
 set(GLFW_LIBRARY_TYPE "" CACHE STRING "Library type override for GLFW (SHARED, STATIC, OBJECT, or empty to follow BUILD_SHARED_LIBS)" FORCE)
 set(GLFW_USE_HYBRID_HPG OFF CACHE BOOL "Force use of high-performance GPU on hybrid systems" FORCE)
 if (MSVC)
-	set(USE_MSVC_RUNTIME_LIBRARY_DLL ON CACHE BOOL "Use MSVC runtime library DLL" FORCE)
+	set(USE_MSVC_RUNTIME_LIBRARY_DLL OFF CACHE BOOL "Use MSVC runtime library DLL" FORCE)
 endif()
 add_subdirectory(glfw)
 
@@ -38,4 +45,5 @@ add_library(imgui
 	imgui/imgui_widgets.cpp
 	imgui/backends/imgui_impl_glfw.cpp
 	imgui/backends/imgui_impl_opengl3.cpp
+	imgui/misc/cpp/imgui_stdlib.cpp
 )

@@ -1,6 +1,7 @@
 #include "buffer.hpp"
 
 #include <algorithm>
+#include <cstring>
 
 size_t buffer::put(char const* data, size_t count) {
 	if (!this->buf)
@@ -33,8 +34,7 @@ void buffer::alloc(size_t count) {
 }
 
 void buffer::dealloc(void) {
-	if (this->buf)
-		delete[] this->buf;
+	delete[] this->buf;
 	this->buf = nullptr;
 	this->len = 0;
 	this->pos = 0;

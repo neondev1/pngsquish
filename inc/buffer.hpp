@@ -26,12 +26,11 @@ public:
 inline buffer::buffer(void) : buf(nullptr), len(0), pos(0) { }
 
 inline buffer::buffer(size_t len) : len(len), pos(0) {
-	this->buf = new char[len];
+	if (len != 0) this->buf = new char[len];
 }
 
 inline buffer::~buffer() {
-	if (this->buf)
-		delete[] this->buf;
+	delete[] this->buf;
 }
 
 constexpr char* buffer::data(void) {

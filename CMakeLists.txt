@@ -5,11 +5,11 @@ if (POLICY CMP0141)
   set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT "$<IF:$<AND:$<C_COMPILER_ID:MSVC>,$<CXX_COMPILER_ID:MSVC>>,$<$<CONFIG:Debug,RelWithDebInfo>:EditAndContinue>,$<$<CONFIG:Debug,RelWithDebInfo>:ProgramDatabase>>")
 endif()
 
-project("pngsquish")
+project(pngsquish)
 
 if (MSVC)
-	option(CRT_STATIC "Statically link the MSVC runtime library" ON)
-	set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>$<$<NOT:$<BOOL:${CRT_STATIC}>>:DLL>")
+	option(PNGSQUISH_CRT_STATIC "Statically link the MSVC runtime library" ON)
+	set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>$<$<NOT:$<BOOL:${PNGSQUISH_CRT_STATIC}>>:DLL>")
 endif()
 
 add_executable(pngsquish
@@ -18,20 +18,25 @@ add_executable(pngsquish
 	src/image.cpp
 	src/buffer.cpp
 	src/file.cpp
-	src/matrix.cpp
+	src/perspective.cpp
+	src/gui.cpp
 	src/stb_image.cpp
+	src/glad.c
 )
-set_property(TARGET "${CMAKE_PROJECT_NAME}" PROPERTY CXX_STANDARD 17)
+set_property(TARGET ${CMAKE_PROJECT_NAME} PROPERTY CXX_STANDARD 20)
 
 add_subdirectory(lib)
 
-target_include_directories("${CMAKE_PROJECT_NAME}"
+target_include_directories(${CMAKE_PROJECT_NAME}
 	PRIVATE inc
-	PRIVATE lib
+	PUBLIC lib
+	PUBLIC lib/imgui
+	PUBLIC lib/glfw/include
 )
 
-target_link_libraries("${CMAKE_PROJECT_NAME}"
+target_link_libraries(${CMAKE_PROJECT_NAME}
 	libdeflate::libdeflate_static
 	glfw
 	imgui
+	nfd
 )

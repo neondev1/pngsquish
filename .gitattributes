@@ -1,1 +1,5 @@
-include/** linguist-vendored=true
+lib/** linguist-vendored=true
+lib/CMakeLists.txt linguist-vendored=false
+inc/stb_image.h linguist-vendored=true
+inc/stb_image_resize2.h linguist-vendored=true
+src/glad.c linguist-vendored=true

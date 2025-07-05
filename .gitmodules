@@ -8,3 +8,6 @@
 [submodule "lib/libdeflate"]
 	path = lib/libdeflate
 	url = https://github.com/ebiggers/libdeflate.git
+[submodule "lib/nativefiledialog-extended"]
+	path = lib/nativefiledialog-extended
+	url = https://github.com/btzy/nativefiledialog-extended.git
