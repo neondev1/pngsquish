@@ -1,6 +1,7 @@
 #ifndef PNGSQ_BUFFER_HPP
 #define PNGSQ_BUFFER_HPP
 
+#include <cstdint>
 #include <cstring>
 
 class buffer {
@@ -13,19 +14,21 @@ public:
 	inline ~buffer();
 
 	size_t put(char const* data, size_t count);
-	size_t put(char data);
+	size_t put(char ch);
+	size_t put(uint32_t val);
 
 	void alloc(size_t count);
-	void dealloc(void);
+	void free(void);
 
 	constexpr char* data(void);
+	constexpr char const* data(void) const;
 	constexpr size_t size(void) const;
 	constexpr char* offset(size_t count);
 };
 
 inline buffer::buffer(void) : buf(nullptr), len(0), pos(0) { }
 
-inline buffer::buffer(size_t len) : len(len), pos(0) {
+inline buffer::buffer(size_t len) : buf(nullptr), len(len), pos(0) {
 	if (len != 0) this->buf = new char[len];
 }
 
@@ -37,6 +40,10 @@ constexpr char* buffer::data(void) {
 	return this->buf;
 }
 
+constexpr char const* buffer::data(void) const {
+	return this->buf;
+}
+
 constexpr size_t buffer::size(void) const {
 	return this->len;
 }
@@ -45,4 +52,4 @@ constexpr char* buffer::offset(size_t count) {
 	return this->buf + (this->pos = count);
 }
 
-#endif
+#endif // PNGSQ_BUFFER_HPP

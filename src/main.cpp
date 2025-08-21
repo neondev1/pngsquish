@@ -12,54 +12,75 @@
 #include "perspective.hpp"
 #include "random.hpp"
 
+static struct wndinfo window;
+
 static void glfw_err_cb(int error_code, const char* description) {
-	std::fprintf(stderr, "GLFW error (%d): %s\n", error_code, description);
+	std::fprintf(stderr, PNGSQ_ERROR_STRING "GLFW error %d: %s\n", error_code, description);
 }
 
 static void glfw_scale_cb(GLFWwindow* window, float x, float y) {
 	static ImGuiIO& io = ImGui::GetIO();
-	float scale = std::min(x, y);
+	static ImGuiStyle& style = ImGui::GetStyle();
+	::window.scale = std::min(x, y);
 	ImFontConfig font;
-	font.SizePixels = std::floorf(13.0f * scale);
-	io.Fonts->ClearFonts();
+	font.SizePixels = std::floorf(::window.scale * 13.0f);
+	io.Fonts->Clear();
 	io.Fonts->AddFontDefault(&font);
 	ImGui_ImplOpenGL3_Shutdown();
 	ImGui_ImplGlfw_Shutdown();
 	ImGui_ImplGlfw_InitForOpenGL(window, true);
 	ImGui_ImplOpenGL3_Init(PNGSQ_GLSL_VERSION_STRING);
-	ImGui::GetStyle() = ImGuiStyle();
-	ImGui::GetStyle().ScaleAllSizes(scale);
+	style = ImGuiStyle();
+	style.ScaleAllSizes(::window.scale);
+	style.WindowMinSize.y = 4 * font.SizePixels + 8 * style.FramePadding.y + 2 * style.WindowPadding.y + 2 * style.ItemSpacing.y;
+	ImGui::StyleColorsClassic();
 }
 
-int main(void) {
-	if (NFD_Init() != NFD_OKAY) {
-		std::fprintf(stderr, "%s\n", NFD_GetError());
-		return EXIT_FAILURE;
-	}
+static void glfw_fb_size_cb(GLFWwindow* window, int width, int height) {
+	::window.width = width;
+	::window.height = height;
+	::window.size_changed = true;
+}
 
+static void cleanup(void) {
+	NFD_Quit();
+	deinit_shaders_persp();
+	deinit_shaders_prev();
+	glfwDestroyWindow(::window.window);
+	glfwTerminate();
+}
+
+int main(int argc, char** argv) {
 	glfwSetErrorCallback(glfw_err_cb);
 	if (!glfwInit())
 		return EXIT_FAILURE;
-#ifndef __APPLE__
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
-#else
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
-	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-#endif // __APPLE__
 	glfwWindowHint(GLFW_SCALE_TO_MONITOR, GL_TRUE);
-	GLFWwindow* window = glfwCreateWindow(1024, 576, "pngsquish", nullptr, nullptr);
-	if (window == nullptr)
+	glfwWindowHint(GLFW_SAMPLES, 4);
+	::window = {
+		.window = glfwCreateWindow(1024, 576, "pngsquish", nullptr, nullptr),
+		.nfd_init = NFD_Init() == NFD_OKAY
+	};
+	if (::window.window == nullptr)
 		return EXIT_FAILURE;
-	glfwMakeContextCurrent(window);
-	glfwSetWindowContentScaleCallback(window, glfw_scale_cb);
+	glfwMakeContextCurrent(::window.window);
+	glfwGetFramebufferSize(::window.window, &::window.width, &::window.height);
+	glfwSetWindowContentScaleCallback(::window.window, glfw_scale_cb);
+	glfwSetFramebufferSizeCallback(::window.window, glfw_fb_size_cb);
 	glfwSwapInterval(1);
+
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
-		std::fprintf(stderr, "Failed to load OpenGL\n");
-		glfwDestroyWindow(window);
-		glfwTerminate();
+		std::fprintf(stderr, PNGSQ_ERROR_STRING "Failed to load OpenGL functions\n");
+		cleanup();
+		return EXIT_FAILURE;
+	}
+
+	init_rand();
+	if (!init_shaders_persp() || !init_shaders_prev()) {
+		std::fprintf(stderr, PNGSQ_ERROR_STRING "(This error message shouldn't ever appear)\n");
+		cleanup();
 		return EXIT_FAILURE;
 	}
 
@@ -69,54 +90,39 @@ int main(void) {
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
 	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-	ImGui::StyleColorsDark();
+
 	float xs = 0.0f, ys = 0.0f;
-	glfwGetWindowContentScale(window, &xs, &ys);
-	float scale = std::min(xs, ys);
+	glfwGetWindowContentScale(::window.window, &xs, &ys);
+	::window.scale = std::min(xs, ys);
+
 	ImFontConfig font;
-	font.SizePixels = std::floorf(13.0f * scale);
-	io.Fonts->ClearFonts();
+	font.SizePixels = std::floorf(::window.scale * 13.0f);
+	io.Fonts->Clear();
 	io.Fonts->AddFontDefault(&font);
+	ImGuiStyle& style = ImGui::GetStyle();
+	style.ScaleAllSizes(::window.scale);
+	style.WindowMinSize.y = 4 * font.SizePixels + 8 * style.FramePadding.y + 2 * style.WindowPadding.y + 2 * style.ItemSpacing.y;
+	ImGui::StyleColorsClassic();
 
-	ImGui_ImplGlfw_InitForOpenGL(window, true);
+	ImGui_ImplGlfw_InitForOpenGL(::window.window, true);
 	ImGui_ImplOpenGL3_Init(PNGSQ_GLSL_VERSION_STRING);
-	// ImGui::SetColorEditOptions(ImGuiColorEditFlags_Float);
-
-	init_rand();
-	if (!init_shaders()) {
-		NFD_Quit();
-
-		ImGui_ImplOpenGL3_Shutdown();
-		ImGui_ImplGlfw_Shutdown();
-		ImGui::DestroyContext();
-
-		glfwDestroyWindow(window);
-		glfwTerminate();
-		return EXIT_FAILURE;
-	}
 
 	struct image img = {0};
 
-	while (!glfwWindowShouldClose(window)) {
+	while (!glfwWindowShouldClose(::window.window)) {
 		glfwWaitEvents();
-		if (glfwGetWindowAttrib(window, GLFW_ICONIFIED) != 0) {
+		if (glfwGetWindowAttrib(::window.window, GLFW_ICONIFIED) != 0) {
 			ImGui_ImplGlfw_Sleep(50);
 			continue;
 		}
-		int w = 0, h = 0;
-		glfwGetFramebufferSize(window, &w, &h);
-		draw(window, w, h, img);
+		draw(img, ::window);
+		glfwSwapBuffers(::window.window);
 	}
 
 	free_image(img);
-	deinit_shaders();
-	NFD_Quit();
-
 	ImGui_ImplOpenGL3_Shutdown();
 	ImGui_ImplGlfw_Shutdown();
 	ImGui::DestroyContext();
-
-	glfwDestroyWindow(window);
-	glfwTerminate();
+	cleanup();
 	return EXIT_SUCCESS;
 }

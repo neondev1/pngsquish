@@ -1,7 +1,8 @@
-#include "buffer.hpp"
-
 #include <algorithm>
+#include <cstdint>
 #include <cstring>
+
+#include "buffer.hpp"
 
 size_t buffer::put(char const* data, size_t count) {
 	if (!this->buf)
@@ -12,11 +13,21 @@ size_t buffer::put(char const* data, size_t count) {
 	return bytes;
 }
 
-size_t buffer::put(char data) {
+size_t buffer::put(char ch) {
 	if (!this->buf || this->pos == this->len)
 		return 0;
-	buf[this->pos++] = data;
+	buf[this->pos++] = ch;
 	return 1;
+}
+
+size_t buffer::put(uint32_t val) {
+	size_t bytes;
+	for (bytes = 0; bytes < 4; bytes++) {
+		if (this->put((char)(val >> 24)) == 0)
+			return bytes;
+		val <<= 8;
+	}
+	return bytes;
 }
 
 void buffer::alloc(size_t count) {
@@ -30,10 +41,9 @@ void buffer::alloc(size_t count) {
 	delete[] this->buf;
 	this->buf = nbuf;
 	this->len = count;
-	this->pos = 0;
 }
 
-void buffer::dealloc(void) {
+void buffer::free(void) {
 	delete[] this->buf;
 	this->buf = nullptr;
 	this->len = 0;

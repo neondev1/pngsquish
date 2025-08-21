@@ -1,8 +1,8 @@
-#include "random.hpp"
-
 #include <cstdint>
 #include <functional>
 #include <random>
+
+#include "random.hpp"
 
 static uint64_t state;
 

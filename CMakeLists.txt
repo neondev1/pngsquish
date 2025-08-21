@@ -20,6 +20,7 @@ add_executable(pngsquish
 	src/file.cpp
 	src/perspective.cpp
 	src/gui.cpp
+	src/preview.cpp
 	src/stb_image.cpp
 	src/glad.c
 )

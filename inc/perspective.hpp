@@ -1,21 +1,20 @@
+#ifndef PNGSQ_PERSPECTIVE_HPP
+#define PNGSQ_PERSPECTIVE_HPP
+
+#include <deque>
+
+#include "defs.hpp"
 #include "matrix.hpp"
 
-#ifndef __APPLE__
-#	define PNGSQ_GLSL_VERSION_STRING "#version 130"
-#else
-#	define PNGSQ_GLSL_VERSION_STRING "#version 150"
-#endif // __APPLE__
+// Initializes VAO, shaders and framebuffer
+bool init_shaders_persp(void);
+void deinit_shaders_persp(void);
 
-struct point { float x, y; };
-struct quad { struct point p0, p1, p2, p3; };
-
-// Initializes rectangle VAO, shaders and framebuffer
-bool init_shaders(void);
-void deinit_shaders(void);
-
-// Computes the perspective transformation matrix from quadrilateral `src` to a rectangle with lower-left corner at (0, 0)
+// Computes the perspective transformation matrix from quadrilateral `img.dewarp_src` to a 2x2 square centred at (0, 0)
 // Based on Heckbert (1989), page 20
-mat<3> persp_matrix(const struct quad& src);
+mat<3> persp_matrix(const struct image& img);
 
 // Uses OpenGL to transform an image using a matrix
 void transform_image(struct image& img, const mat<3>& matrix, const struct config& cfg);
+
+#endif // PNGSQ_PERSPECTIVE_HPP
